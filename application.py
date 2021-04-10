@@ -1,6 +1,5 @@
 import os,secrets
 from flask import Flask, session,render_template,url_for,redirect,flash,abort,request
-from flask_session import Session
 from PIL import Image
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import login_user,current_user,logout_user,login_required,LoginManager
@@ -26,7 +25,6 @@ def load_user(id):
 # Configure session to use filesystem
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
-Session(app)
 
 @app.route("/")
 def index():
