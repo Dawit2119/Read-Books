@@ -2,9 +2,9 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import FileField,FileAllowed
 from wtforms import StringField, PasswordField, SubmitField, BooleanField,ValidationError,TextAreaField
 from wtforms.validators import InputRequired, Length, Email, EqualTo
-from models import User
+from database import db
 from flask_login import current_user
-
+from flask import session
 
 class RegistrationForm(FlaskForm):
     username = StringField('Username',
@@ -16,12 +16,12 @@ class RegistrationForm(FlaskForm):
                                      validators=[InputRequired(message="confrim password"), EqualTo('password', message="password doesn't match.")])
     submit = SubmitField('Sign Up')
     def validate_username(self,username):
-        user = User.query.filter_by(username=username.data).first()
+        user = db.execute(f"select * from users where username = '{username.data}'").fetchone()
         if user:
             raise ValidationError("The Username is already taken. choose another one.")
     def validate_email(self,email):
-        user = User.query.filter_by(email=email.data).first()
-        if user:
+        email = db.execute(f"select * from users where email = '{email.data}'").fetchone()
+        if email:
             raise ValidationError("The email is already taken. choose another one.")
 
 
@@ -40,13 +40,17 @@ class AccountUpdateForm(FlaskForm):
     profile_picture = FileField('Update Profile Picture',validators=[FileAllowed(['jpg','png'])])
     submit = SubmitField('Update!')
     def validate_username(self,username):
-        if username.data != current_user.username:
-            user = User.query.filter_by(username=username.data).first()
+        print("session name",session.get('username'))
+        print("form name,",username.data)
+        if username.data != session.get('username'):
+            user = db.execute(f"SELECT * FROM users WHERE username = '{username.data}'").fetchone()
+            db.commit()
             if user:
                 raise ValidationError("The Username is already taken. choose another one.")
             
     def validate_email(self,email):
-        if email.data != current_user.email:
-            user = User.query.filter_by(email=email.data).first()
+        if email.data != session.get('email'):
+            email =user = db.execute(f"SELECT * FROM users WHERE email = '{email.data}'").fetchone()
+            db.commit()
             if user:
                 raise ValidationError("The email is already taken. choose another one.")

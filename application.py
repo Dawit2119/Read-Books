@@ -1,18 +1,29 @@
 import os,secrets
+from flask_sqlalchemy import SQLAlchemy
 from flask import Flask, session,render_template,url_for,redirect,flash,abort,request
 from PIL import Image
-from flask_sqlalchemy import SQLAlchemy
 from flask_login import login_user,current_user,logout_user,login_required,LoginManager
 from forms import RegistrationForm,LoginForm,AccountUpdateForm
 from flask_bcrypt import Bcrypt
-from models import User
+from flask_session import Session
+from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session, sessionmaker
 
 app = Flask(__name__)
 bcrypt = Bcrypt(app)
-app.config['SECRET_KEY'] = '5791628bb0b13ce0c676dfde280ba245'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:password29@localhost/newdatabase'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
+app.secret_key = 'secret key'
+# Check for environment variable
+if not os.getenv("DATABASE_URL"):
+    raise RuntimeError("DATABASE_URL is not set")
+
+# Configure session to use filesystem
+app.config["SESSION_PERMANENT"] = False
+app.config["SESSION_TYPE"] = "filesystem"
+Session(app)
+# Set up database
+engine = create_engine(os.getenv("DATABASE_URL"))
+db = scoped_session(sessionmaker(bind=engine))
+
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
@@ -20,11 +31,8 @@ login_manager.login_message_category = 'info'
 login_manager.init_app(app)
 
 @login_manager.user_loader
-def load_user(id):
-    return User.query.get(int(id))
-# Configure session to use filesystem
-app.config["SESSION_PERMANENT"] = False
-app.config["SESSION_TYPE"] = "filesystem"
+def load_user(user_id):
+    return db.execute(f"SELECT * FROM user WHERE user_id = '{user_id}'")
 
 @app.route("/")
 def index():
@@ -36,14 +44,13 @@ def about():
 
 @app.route("/register", methods=['GET', 'POST'])
 def register():
-    if current_user.is_authenticated:
-        return redirect(url_for('home'))
+    if session.get("user_id"):
+        return redirect(url_for('index'))
     form = RegistrationForm()
     if form.validate_on_submit():
         hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-        user = User(username=form.username.data,email=form.email.data,password=hashed_password)
-        db.session.add(user)
-        db.session.commit()
+        db.execute(f"insert into users(username,email,password) values ('{form.username.data}','{form.email.data}','{hashed_password}')")
+        db.commit()
         flash("Your account is created successfully! you are now able to login", "success")
         return redirect(url_for('login'))
     return render_template('register.html', title='Register', form=form)
@@ -51,18 +58,26 @@ def register():
 
 @app.route("/login", methods=['GET', 'POST'])
 def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('home'))
+    logged = session.get("user_id")
+    print(logged)
+    if logged:
+        return redirect(url_for('index'))
+    # session.clear()
     form = LoginForm()
-    if form.validate_on_submit():
-            user = User.query.filter_by(email=form.email.data).first()
-            if user and bcrypt.check_password_hash(user.password,form.password.data):
-                login_user(user,remember=form.remember.data)
-                flash('You have been logged in!', 'success')
-                next_page = request.args.get('next')
-                return redirect(next_page) if next_page else redirect(url_for('index'))
-            else:
-                flash('Login Unsuccessful. Please check username and password', 'danger')
+    if form.validate_on_submit():     
+        user = db.execute(f"""SELECT * FROM users WHERE email ='{form.email.data}'""").fetchone()
+        db.commit()
+        if user and bcrypt.check_password_hash(user[4],form.password.data):
+            session['user_id'] = user[0]
+            session['username'] = user[1]
+            session['email']= user[2]
+            session['image_file'] = user[3]
+            print(user)
+            flash('You have been logged in!', 'success')
+            next_page = request.args.get('next')
+            return redirect(next_page) if next_page else redirect(url_for('index'))
+        else:
+            flash('Login Unsuccessful. Please check username and password', 'danger')
     return render_template('login.html', title='Login', form=form)
 
 def save_picture(form_picture):
@@ -81,26 +96,33 @@ def save_picture(form_picture):
 
 @app.route("/logout")
 def logout():
-     logout_user()
+     session.clear()
      return redirect(url_for('index'))
 
 @app.route("/account", methods=['GET', 'POST'])
-@login_required
+# @login_required
 def account():
      form = AccountUpdateForm()
+     session['username'] = form.username.data
+     session['email'] = form.email.data
      if form.validate_on_submit():
          if form.profile_picture.data:
              profile_picture = save_picture(form.profile_picture.data)
-             current_user.image_file = profile_picture
-         current_user.username = form.username.data + " hello"
-         current_user.email = form.email.data
-         db.session.commit()
-         flash("Your Account is successfully updated!","success")
+             db.execute(f"UPDATE users SET image_file = '{profile_picture}' WHERE id = {int(session.get('user_id'))}")
+         db.execute(f"UPDATE users SET username = '{form.username.data}' WHERE id = {int(session.get('user_id'))}")
+         db.execute(f"UPDATE users SET email = '{form.email.data}' WHERE id = {int(session.get('user_id'))}")
+         db.commit()
+         flash("Your account is updated",'info')
          return redirect(url_for('account'))
      else:
          request.methods = 'GET'
-         form.username.data = current_user.username
-         form.email.data = current_user.email 
-     image_file = url_for('static',filename= 'profilePics/' + current_user.image_file)
+         user = db.execute(f"SELECT * FROM users WHERE id = '{session.get('user_id')}'").fetchone()
+         db.commit()
+         form.username.data = user[1]
+         form.email.data = user[2]
+     image_file = url_for('static',filename= 'profilePics/' + user[3])
      return render_template('account.html',
-                            image_file=image_file,form=form,title='account page')  
+                            image_file=image_file,form=form)  
+ 
+if __name__ =='__main__':
+    app.run(debug=True)

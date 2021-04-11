@@ -25,10 +25,11 @@
               <div class="navbar-nav mr-auto">
                 <a class="nav-item nav-link" href="{{url_for('index')}}">Home</a>
                 <a class="nav-item nav-link" href="{{url_for('about')}}">About</a>
+                <a class="nav-item nav-link" href="#">search book</a>
               </div>
               <!-- Navbar Right Side -->
               <div class="navbar-nav">
-                {% if not current_user.is_authenticated%}
+                {% if not session.get('user_id')%}
                 <a class="nav-item nav-link" href="{{url_for('login')}}">Login</a>
                 <a class="nav-item nav-link" href="{{url_for('register')}}">Register</a>
                 {%else%}
