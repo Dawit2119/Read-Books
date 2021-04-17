@@ -1,0 +1,64 @@
+{%extends "layout.html"%}
+{% block content %}
+        <!-- showing error message -->
+        <div class="container-fluid book">
+            {% if error %}
+                <div class="alert alert-warning text-center" role="alert" >
+                     {{error}}
+                    <hr>
+                </div>
+            {% endif %}
+        </div> 
+        
+        <!-- showing result of search -->    
+        <div class="container-fluid book">
+            {% if books %}
+            <div>
+                <h2 class="jumbotron  text-info"><span class="fa fa-search"></span>Your matched search Results:  
+                    {{count}}
+                </h2>
+                <hr>
+            </div>
+            {% endif %}
+
+            <!-- show books found-image,title,rate,isbn and author -->
+            <div class="container " id="main" >
+                
+                <div class="contents">
+                    <div class="row">
+
+                        {% for i in range(count) %}
+                        <div class="col-sm-4">
+                            <div class="item">
+                                <div class="img-thumbnail">
+                                    <img src="http://covers.openlibrary.org/b/isbn/{{books[i]['isbn']}}-L.jpg" alt="Book image" style="width:200px;"> 
+                                    <div class="caption">
+                                        <div>
+                                            <h5 aria-describedby="title"><a href="/book/{{books[i]['isbn']}}">{{books[i]['title']}}</a></h5>
+                                        </div>
+                                        <h4>Isbn: {{books[i].isbn}}</h4>
+                                        <h5>By {{books[i].author}}</h5>
+                                        <div class="rating">
+                                            
+                                            {%for i in range(rating[i])%}
+                                            <span class="fa fa-star checked"></span>
+                                            {%endfor%}
+
+                                            {%for i in range(5-rating[i])%}
+                                            <span class="fa fa-star "></span>
+                                            {%endfor%}
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>&nbsp;&nbsp;
+                        </div>
+
+                        {%endfor%}
+                </div>
+                </div>
+                
+            </div>
+
+            </div>
+{% endblock %}
