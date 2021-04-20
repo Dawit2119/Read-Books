@@ -1,0 +1,15 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container-fluid" >
+    <form action="/book" method="POST" id="search-main">
+        <div class="input-group search-box">
+            <input type="text" class="form-control" name="book" placeholder="search Book by book name,author or ISBN number." aria-controls="intro">
+            <div class="input-group-append">
+                <button class="btn btn-outline-secondary" type="submit" id="search"><i class="fa fa-search"></i></button>
+            </div>
+        </div>
+    </form>
+</div>
+
+
+{%endblock%}

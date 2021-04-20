@@ -1,0 +1,99 @@
+{% extends "layout.html" %} 
+
+{%block head%} 
+{{super()}}
+<link rel="stylesheet" href="{{url_for('static',filename='css/rating.css')}}">
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Karantina&family=Roboto:wght@300&display=swap" rel="stylesheet"> 
+{%endblock%}
+<!--Container-->
+{%block content%}
+<div class="container  my-3 ">
+    <div class="row">
+      <div class="col-6"> </div>
+      <div class="col-6"> 
+
+      </div></div>
+  </div>
+  <div class="row">
+    <div class="col-5 item">
+      {%for i in bookInfo%}
+        <img src="http://covers.openlibrary.org/b/isbn/{{bookInfo[0]['isbn']}}-M.jpg" alt="Book-preview" class="book-priview-image">
+        <h5>Title: {{i['title']}}</h5>
+        <p>Isbn: {{i['isbn']}}</p>
+        <h6>Author: {{i['author']}}</h6>
+        <div class="rating">                                            
+          {%for i in range(rating_api)%}
+          <span class="fa fa-star "></span>
+          {%endfor%}
+
+          {%for i in range(5-rating_api)%}
+          <span class="fa fa-star checked"></span>
+          {%endfor%}
+
+      </div>
+      {%endfor%}
+  
+    </div>
+     <div class="col-5">
+       <h2>Rate this book</h2>
+        <form action="" method="post">
+          <div class="form-group">
+            <label for="rating">Rating (1-5) default: 1</label>
+            <div class="rating"> 
+            <input type="radio" name="rating" value="5" id="5"> <label for="5">☆</label>
+            <input type="radio" name="rating" value="4" id="4">
+            <label for="4">☆</label> <input type="radio" name="rating" value=3 id="3">
+            <label for="3">☆</label> <input type="radio" name="rating" value=2 id="2">
+            <label for="2">☆</label> <input type="radio" name="rating" value=1 id="1" checked>
+            <label for="1">☆</label>
+           </div>
+           <div class="form-group purple-border">
+            <label for="comment">Your comment.</label>
+            <textarea class="form-control" id="comment" name="comment" rows="3"></textarea>
+             </div>
+          <button type="submit" class="btn btn-primary">Rate</button>
+        </form>
+
+      </div>
+    </div>
+    </div>
+    <div class="row">
+      <div class="col-2"></div>
+      <div class="col-8">
+        <h1 class="page-header text-muted">Ratings on this book.</h1>
+        <table class="table table-striped table-bordered">
+          <thead>
+            <tr>
+              <th scope="col">Reviewer name</th>
+              <th scope="col">Rating</th>
+              <th scope="col">Comment</th>
+              <th scope="col">Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {%for review in reviews%}
+            <tr>
+              <td>{{review['user_name']}}</td>
+              <td>{{review['rating']}}</td>  
+              <td>{{review['comment']}}</td>
+              <td>{{review['times']}}</td>
+            </tr>
+            {%endfor%}
+          </tbody>
+        </table>
+
+      </div>
+      <div class="col-2"></div>
+    </div>
+    <!-- <div class="col-4"></div> -->
+ 
+
+
+    </div>
+  </div>
+</div>
+
+
+{%endblock%}
+
