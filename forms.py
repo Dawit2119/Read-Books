@@ -40,13 +40,12 @@ class AccountUpdateForm(FlaskForm):
     profile_picture = FileField('Update Profile Picture',validators=[FileAllowed(['jpg','png'])])
     submit = SubmitField('Update!')
     def validate_username(self,username):
-        print("session name",session.get('username'))
-        print("form name,",username.data)
         if username.data != session.get('username'):
             user = db.execute(f"SELECT * FROM users WHERE username = '{username.data}'").fetchone()
             db.commit()
             if user:
                 raise ValidationError("The Username is already taken. choose another one.")
+
             
     def validate_email(self,email):
         if email.data != session.get('email'):
